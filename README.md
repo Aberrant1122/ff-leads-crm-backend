@@ -4,7 +4,7 @@
 
 ### 1. Install Dependencies
 ```bash
-cd leads-crm-backend
+cd ff-leads-crm-backend
 npm install
 ```
 
