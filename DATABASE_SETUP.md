@@ -2,9 +2,45 @@
 
 This guide will help you set up the MySQL database for the CRM backend.
 
-## Quick Setup
+# Database Setup Guide
 
-### Option 1: Using XAMPP (Recommended for Windows)
+This guide will help you set up the MySQL database for the CRM backend.
+
+## Railway Deployment (Recommended)
+
+### Using DATABASE_URL (Railway/Production)
+
+Railway automatically provides a `DATABASE_URL` environment variable when you add a MySQL service.
+
+1. **Add MySQL Service in Railway**
+   - Go to your Railway project
+   - Click "New" → "Database" → "Add MySQL"
+   - Railway will automatically set `MYSQL_URL` variable
+
+2. **Set Environment Variables**
+   ```env
+   DATABASE_URL=${{MYSQL_URL}}
+   ```
+
+3. **Deploy**
+   - Your app will automatically use `DATABASE_URL`
+   - Migrations run automatically on deployment
+
+## Local Development Setup
+
+### Option 1: Using DATABASE_URL (Recommended)
+
+1. **Update .env file**
+   ```env
+   DATABASE_URL=mysql://root:@localhost:3307/fortune-crm
+   ```
+
+2. **Setup Database**
+   ```bash
+   npm run setup-db
+   ```
+
+### Option 2: Using XAMPP (Windows)
 
 1. **Download and Install XAMPP**
    - Go to https://www.apachefriends.org/
@@ -18,11 +54,7 @@ This guide will help you set up the MySQL database for the CRM backend.
 
 3. **Update .env file**
    ```env
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=
-   DB_NAME=fortune-crm
-   DB_PORT=3306
+   DATABASE_URL=mysql://root:@localhost:3306/fortune-crm
    ```
 
 4. **Setup Database**
@@ -30,35 +62,37 @@ This guide will help you set up the MySQL database for the CRM backend.
    npm run setup-db
    ```
 
-### Option 2: Using MySQL Server
+## Environment Variables Priority
 
-1. **Install MySQL Server**
-   - Download from https://dev.mysql.com/downloads/mysql/
-   - Install with default settings
-   - Remember the root password you set
+The system uses this priority order:
+1. **DATABASE_URL** (preferred for Railway/production)
+2. **Individual variables** (fallback for local development)
+   - DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
 
-2. **Update .env file**
-   ```env
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=your_mysql_password
-   DB_NAME=fortune-crm
-   DB_PORT=3306
-   ```
+## DATABASE_URL Format
 
-3. **Setup Database**
-   ```bash
-   npm run setup-db
-   ```
+```
+mysql://username:password@host:port/database
+```
+
+Examples:
+- Local: `mysql://root:@localhost:3306/fortune-crm`
+- Railway: `mysql://root:password@containers-us-west-1.railway.app:3306/railway`
 
 ## Current Configuration
 
-Your current .env file is configured for:
-- Host: localhost
-- Port: 3307 (non-standard)
-- User: root
-- Password: (empty)
-- Database: fortune-crm
+Your current .env file supports both approaches:
+```env
+# Primary (Railway/Production)
+DATABASE_URL=mysql://root:@localhost:3307/fortune-crm
+
+# Fallback (Local Development)
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=fortune-crm
+DB_PORT=3307
+```
 
 ## Troubleshooting
 
