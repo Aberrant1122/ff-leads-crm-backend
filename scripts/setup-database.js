@@ -32,11 +32,17 @@ async function setupDatabase() {
         await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
         console.log(`✅ Database '${dbName}' ready`);
 
-        // Test connection to the specific database
-        await connection.execute(`USE \`${dbName}\``);
-        console.log('✅ Database connection successful');
-
+        // Close connection and reconnect to the specific database
         await connection.end();
+        
+        // Test connection to the specific database
+        const dbConnection = await mysql.createConnection({
+            ...config,
+            database: dbName
+        });
+        
+        console.log('✅ Database connection successful');
+        await dbConnection.end();
         
         console.log('\n🎉 Database setup completed successfully!');
         console.log('You can now run: npm run migrate');

@@ -8,14 +8,18 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run migrate && node server.js",
+    "start": "npm run migrate:safe && node server.js",
     "start:server": "node server.js",
-    "dev": "npm run migrate && nodemon server.js",
+    "start:force": "node server.js",
+    "dev": "npm run migrate:safe && nodemon server.js",
     "dev:server": "nodemon server.js",
+    "dev:force": "nodemon server.js",
     "migrate": "node scripts/migrate.js run",
+    "migrate:safe": "node scripts/migrate.js run || echo 'Migration skipped - database not available'",
     "migrate:status": "node scripts/migrate.js status",
     "create-migration": "node scripts/create-migration.js",
-    "setup-db": "node scripts/setup-database.js"
+    "setup-db": "node scripts/setup-database.js",
+    "test-tables": "node scripts/test-tables.js"
   },
   "dependencies": {
     "axios": "^1.13.2",

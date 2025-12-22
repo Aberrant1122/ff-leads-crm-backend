@@ -84,10 +84,10 @@ const startServer = async () => {
         try {
             await migrationRunner.runMigrations();
         } catch (error) {
-            console.error('❌ Migration failed:', error.message);
-            console.error('💡 Try running: npm run setup-db');
-            console.error('💡 Or check your database connection in .env file');
-            process.exit(1);
+            console.warn('⚠️  Migration failed:', error.message);
+            console.warn('💡 Database may not be available. Server will start anyway.');
+            console.warn('💡 Run "npm run setup-db" when database is ready.');
+            console.warn('💡 Then run "npm run migrate" to apply migrations.');
         }
 
         // Create tables if they don't exist (legacy support)
