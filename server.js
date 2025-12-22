@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { testConnection } = require('./src/config/database');
+const MigrationRunner = require('./src/utils/migrationRunner');
 const User = require('./src/models/User');
 const routes = require('./src/routes');
 
@@ -77,7 +78,19 @@ const startServer = async () => {
             process.exit(1);
         }
 
-        // Create tables if they don't exist
+        // Run database migrations
+        console.log('🔄 Running database migrations...');
+        const migrationRunner = new MigrationRunner();
+        try {
+            await migrationRunner.runMigrations();
+        } catch (error) {
+            console.error('❌ Migration failed:', error.message);
+            console.error('💡 Try running: npm run setup-db');
+            console.error('💡 Or check your database connection in .env file');
+            process.exit(1);
+        }
+
+        // Create tables if they don't exist (legacy support)
         await User.createTable();
         await User.createRefreshTokensTable();
         
