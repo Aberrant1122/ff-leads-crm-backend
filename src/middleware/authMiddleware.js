@@ -3,17 +3,21 @@ const { errorResponse } = require('../utils/responseUtils');
 
 /**
  * Authentication middleware - Verify JWT access token
+ * Supports token from Authorization header or query parameter (dev-only)
  */
 const authMiddleware = (req, res, next) => {
     try {
-        // Get token from Authorization header
-        const authHeader = req.headers.authorization;
+        // Get token from query parameter (dev-only) or Authorization header
+        const token = req.query.token || req.headers.authorization?.split(" ")[1];
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (!token) {
             return errorResponse(res, 401, 'Access token is required');
         }
 
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        // Log warning for query token usage (dev-only feature)
+        if (req.query.token) {
+            console.warn('[AuthMiddleware] Using token from query parameter (dev-only feature)');
+        }
 
         // Verify token
         const decoded = verifyAccessToken(token);

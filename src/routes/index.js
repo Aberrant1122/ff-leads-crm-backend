@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authRoutes = require('./authRoutes');
+const googleOAuthRoutes = require('./googleOAuthRoutes');
 const whatsappRoutes = require('./whatsappRoutes');
 const pipelineRoutes = require('./pipelineRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
@@ -8,9 +9,11 @@ const dashboardRoutes = require('./dashboardRoutes');
 const leadsRoutes = require('./leadsRoutes');
 const userRoutes = require('./userRoutes');
 const tasksRoutes = require('./tasks');
+const calendarRoutes = require('./calendarRoutes');
 
-// Mount auth routes
+// Mount auth routes (includes Google OAuth)
 router.use('/auth', authRoutes);
+router.use('/auth', googleOAuthRoutes);
 
 // Mount WhatsApp routes
 router.use('/', whatsappRoutes);
@@ -32,6 +35,9 @@ router.use('/', userRoutes);
 
 // Mount tasks routes
 router.use('/tasks', tasksRoutes);
+
+// Mount calendar routes
+router.use('/', calendarRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -68,6 +74,38 @@ router.get('/test-tasks', async (req, res) => {
                     'GET /tasks': 'Get all tasks (auth required)',
                     'PATCH /tasks/:id/status': 'Update task status (auth required)',
                     'POST /tasks': 'Create task (auth required)'
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Google OAuth status check (public endpoint for debugging)
+router.get('/test-google-oauth', async (req, res) => {
+    try {
+        const googleOAuthService = require('../services/googleOAuthService');
+        const status = await googleOAuthService.getConnectionStatus();
+        
+        res.json({
+            success: true,
+            data: {
+                ...status,
+                endpoints: {
+                    'GET /auth/google': 'Start OAuth flow (redirects to Google)',
+                    'GET /auth/google/callback': 'OAuth callback (called by Google)',
+                    'GET /auth/google/status': 'Check connection status (auth required)',
+                    'POST /auth/google/disconnect': 'Disconnect Google account (auth required)'
+                },
+                calendarEndpoints: {
+                    'POST /calendar/meeting': 'Create meeting (auth required)',
+                    'GET /calendar/meetings': 'List meetings (auth required)',
+                    'GET /calendar/meeting/:eventId': 'Get meeting (auth required)',
+                    'DELETE /calendar/meeting/:eventId': 'Delete meeting (auth required)'
                 }
             }
         });
