@@ -27,8 +27,39 @@ app.use((req, res, next) => {
 });
 
 // Public health check (no auth required)
-app.get('/api/health', (req, res) => {
-    res.json({ success: true, message: 'API is running' });
+app.get('/api/health', async (req, res) => {
+    const health = {
+        success: true,
+        message: 'API is running',
+        timestamp: new Date().toISOString(),
+        database: 'unknown',
+        migrations: 'unknown'
+    };
+
+    try {
+        // Test database connection
+        const dbConnected = await testConnection();
+        health.database = dbConnected ? 'connected' : 'disconnected';
+
+        if (dbConnected) {
+            // Check if migrations table exists and get status
+            try {
+                const migrationRunner = new MigrationRunner();
+                const status = await migrationRunner.getMigrationStatus();
+                health.migrations = {
+                    total: status.total,
+                    executed: status.executed,
+                    pending: status.pending
+                };
+            } catch (error) {
+                health.migrations = 'error';
+            }
+        }
+    } catch (error) {
+        health.database = 'error';
+    }
+
+    res.json(health);
 });
 
 // API Routes
@@ -70,50 +101,82 @@ app.use((err, req, res, next) => {
 
 // Initialize database and start server
 const startServer = async () => {
+    let migrationSuccess = false;
+    
     try {
-        // Test database connection
-        const dbConnected = await testConnection();
-        if (!dbConnected) {
-            console.error('Failed to connect to database. Please check your configuration.');
-            process.exit(1);
-        }
-
-        // Run database migrations
-        console.log('🔄 Running database migrations...');
-        const migrationRunner = new MigrationRunner();
-        try {
-            await migrationRunner.runMigrations();
-        } catch (error) {
-            console.warn('⚠️  Migration failed:', error.message);
-            console.warn('💡 Database may not be available. Server will start anyway.');
-            console.warn('💡 Run "npm run setup-db" when database is ready.');
-            console.warn('💡 Then run "npm run migrate" to apply migrations.');
-        }
-
-        // Create tables if they don't exist (legacy support)
-        await User.createTable();
-        await User.createRefreshTokensTable();
+        // Test database connection with retries for Railway
+        console.log('🔄 Testing database connection...');
+        let dbConnected = false;
+        let retries = 5;
         
-        // Create WhatsApp/Lead tables
-        const Lead = require('./src/models/Lead');
-        await Lead.createTable();
-        await Lead.createMessagesTable();
-        await Lead.createTimelineTable();
+        while (!dbConnected && retries > 0) {
+            dbConnected = await testConnection();
+            if (!dbConnected) {
+                console.log(`⏳ Database not ready, retrying... (${retries} attempts left)`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                retries--;
+            }
+        }
 
-        // Create Tasks table
-        const Task = require('./src/models/Task');
-        await Task.createTable();
+        if (!dbConnected) {
+            console.warn('⚠️  Database connection failed after retries. Starting server anyway...');
+        } else {
+            console.log('✅ Database connection established');
+            
+            // Run database migrations safely
+            console.log('🔄 Running database migrations...');
+            const migrationRunner = new MigrationRunner();
+            try {
+                await migrationRunner.runMigrations();
+                migrationSuccess = true;
+                console.log('✅ Database migrations completed successfully');
+            } catch (error) {
+                console.warn('⚠️  Migration failed:', error.message);
+                console.warn('💡 Server will continue starting. Migrations can be run later.');
+            }
 
-        // Start server
+            // Create legacy tables if migrations didn't run
+            if (!migrationSuccess) {
+                console.log('🔄 Creating legacy tables...');
+                try {
+                    await User.createTable();
+                    await User.createRefreshTokensTable();
+                    
+                    // Create WhatsApp/Lead tables
+                    const Lead = require('./src/models/Lead');
+                    await Lead.createTable();
+                    await Lead.createMessagesTable();
+                    await Lead.createTimelineTable();
+
+                    // Create Tasks table
+                    const Task = require('./src/models/Task');
+                    await Task.createTable();
+                    
+                    console.log('✅ Legacy tables created');
+                } catch (tableError) {
+                    console.warn('⚠️  Some tables may not be available:', tableError.message);
+                }
+            }
+        }
+
+        // Start server regardless of migration status
         app.listen(PORT, () => {
             console.log(`\n🚀 Server running on port ${PORT}`);
             console.log(`📍 API URL: http://localhost:${PORT}`);
             console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+            console.log(`📊 Database: ${dbConnected ? '✅ Connected' : '❌ Not Connected'}`);
+            console.log(`📊 Migrations: ${migrationSuccess ? '✅ Completed' : '⚠️  Pending'}`);
             console.log(`\n✅ Ready to accept requests\n`);
         });
+        
     } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
+        console.error('❌ Server startup error:', error.message);
+        // Don't exit - try to start server anyway for Railway
+        app.listen(PORT, () => {
+            console.log(`\n🚀 Server running on port ${PORT} (with errors)`);
+            console.log(`⚠️  Some features may not work properly`);
+            console.log(`💡 Check database configuration and run migrations manually\n`);
+        });
     }
 };
 

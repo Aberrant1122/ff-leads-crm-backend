@@ -12,10 +12,17 @@ class MigrationRunner {
      * Test database connection before running migrations
      */
     async ensureConnection() {
-        const isConnected = await testConnection();
-        if (!isConnected) {
-            throw new Error('Database connection failed. Please check your database configuration and ensure MySQL is running.');
+        let retries = 3;
+        while (retries > 0) {
+            const isConnected = await testConnection();
+            if (isConnected) {
+                return true;
+            }
+            console.log(`⏳ Database connection retry... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
         }
+        throw new Error('Database connection failed after retries. Please check your DATABASE_URL configuration.');
     }
 
     /**
@@ -108,11 +115,21 @@ class MigrationRunner {
     async runMigrations() {
         console.log('🚀 Starting database migrations...');
         
-        // Test database connection first
-        await this.ensureConnection();
+        // Test database connection first with retries
+        try {
+            await this.ensureConnection();
+        } catch (error) {
+            console.warn('⚠️  Database not ready for migrations:', error.message);
+            throw error;
+        }
         
         // Ensure migrations table exists
-        await this.createMigrationsTable();
+        try {
+            await this.createMigrationsTable();
+        } catch (error) {
+            console.error('❌ Failed to create migrations table:', error.message);
+            throw error;
+        }
         
         // Get executed and available migrations
         const executedMigrations = await this.getExecutedMigrations();
@@ -132,7 +149,13 @@ class MigrationRunner {
         
         // Execute pending migrations
         for (const migration of pendingMigrations) {
-            await this.executeMigration(migration);
+            try {
+                await this.executeMigration(migration);
+            } catch (error) {
+                console.error(`❌ Migration failed: ${migration}`);
+                console.error(`Error: ${error.message}`);
+                throw error;
+            }
         }
 
         console.log('🎉 All migrations completed successfully!');
