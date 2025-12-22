@@ -33,7 +33,8 @@ app.get('/api/health', async (req, res) => {
         message: 'API is running',
         timestamp: new Date().toISOString(),
         database: 'unknown',
-        migrations: 'unknown'
+        migrations: 'unknown',
+        google_oauth_table: 'unknown'
     };
 
     try {
@@ -54,12 +55,61 @@ app.get('/api/health', async (req, res) => {
             } catch (error) {
                 health.migrations = 'error';
             }
+
+            // Check if google_oauth_tokens table exists
+            try {
+                const { pool } = require('./src/config/database');
+                const [rows] = await pool.execute(
+                    "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'google_oauth_tokens'"
+                );
+                health.google_oauth_table = rows[0].count > 0 ? 'exists' : 'missing';
+            } catch (error) {
+                health.google_oauth_table = 'error';
+            }
         }
     } catch (error) {
         health.database = 'error';
     }
 
     res.json(health);
+});
+
+// Emergency table creation endpoint for Railway
+app.post('/api/emergency/create-tables', async (req, res) => {
+    try {
+        const { pool } = require('./src/config/database');
+        
+        // Create google_oauth_tokens table
+        await pool.execute(`
+            CREATE TABLE IF NOT EXISTS google_oauth_tokens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL UNIQUE,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT NULL,
+                scope TEXT NULL,
+                token_type VARCHAR(50) NULL,
+                expiry_date BIGINT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT fk_google_oauth_user_id 
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                INDEX idx_google_oauth_user_id (user_id),
+                INDEX idx_google_oauth_expiry (expiry_date)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        res.json({
+            success: true,
+            message: 'Emergency tables created successfully',
+            tables_created: ['google_oauth_tokens']
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create emergency tables',
+            error: error.message
+        });
+    }
 });
 
 // API Routes
@@ -156,6 +206,32 @@ const startServer = async () => {
                 } catch (tableError) {
                     console.warn('⚠️  Some tables may not be available:', tableError.message);
                 }
+            }
+
+            // EMERGENCY: Ensure google_oauth_tokens table exists (Railway fix)
+            console.log('🔄 Ensuring google_oauth_tokens table exists...');
+            try {
+                const { pool } = require('./src/config/database');
+                await pool.execute(`
+                    CREATE TABLE IF NOT EXISTS google_oauth_tokens (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL UNIQUE,
+                        access_token TEXT NOT NULL,
+                        refresh_token TEXT NULL,
+                        scope TEXT NULL,
+                        token_type VARCHAR(50) NULL,
+                        expiry_date BIGINT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        CONSTRAINT fk_google_oauth_user_id 
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        INDEX idx_google_oauth_user_id (user_id),
+                        INDEX idx_google_oauth_expiry (expiry_date)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                `);
+                console.log('✅ google_oauth_tokens table ensured');
+            } catch (oauthTableError) {
+                console.warn('⚠️  Could not create google_oauth_tokens table:', oauthTableError.message);
             }
         }
 

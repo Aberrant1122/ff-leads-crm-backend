@@ -19,7 +19,8 @@
     "migrate:status": "node scripts/migrate.js status",
     "create-migration": "node scripts/create-migration.js",
     "setup-db": "node scripts/setup-database.js",
-    "test-tables": "node scripts/test-tables.js"
+    "test-tables": "node scripts/test-tables.js",
+    "force-oauth-table": "node scripts/force-create-oauth-table.js"
   },
   "dependencies": {
     "axios": "^1.13.2",
