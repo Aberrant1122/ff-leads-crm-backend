@@ -53,7 +53,7 @@
  */
 
 /**
- * @typedef {'New'|'Incoming'|'Contacted'|'Qualified'|'Proposal'|'Negotiation'|'Won'|'Lost'} LeadStage
+ * @typedef {'New'|'Incoming'|'Contacted'|'Qualified'|'Proposal'|'Second Wing'|'Won'|'Lost'} LeadStage
  */
 
 /**

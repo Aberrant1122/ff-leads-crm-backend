@@ -192,7 +192,7 @@ exports.getPipelineDistribution = async (req, res) => {
             'Contacted': '#3b82f6',
             'Qualified': '#10b981',
             'Proposal': '#6366f1',
-            'Negotiation': '#8b5cf6',
+            'Second Wing': '#8b5cf6',
             'Won': '#059669',
             'Lost': '#ef4444'
         };
@@ -378,7 +378,7 @@ async function getPipelineDistributionData() {
         'Contacted': '#3b82f6',
         'Qualified': '#10b981',
         'Proposal': '#6366f1',
-        'Negotiation': '#8b5cf6',
+        'Second Wing': '#8b5cf6',
         'Won': '#059669',
         'Lost': '#ef4444'
     };

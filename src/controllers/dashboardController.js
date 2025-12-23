@@ -58,12 +58,12 @@ exports.getDashboardStats = async (req, res) => {
             'Contacted': { bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', borderColor: 'border-indigo-200' },
             'Qualified': { bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', borderColor: 'border-emerald-200' },
             'Proposal': { bgColor: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-200' },
-            'Negotiation': { bgColor: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-200' },
+            'Second Wing': { bgColor: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-200' },
             'Won': { bgColor: 'bg-green-50', textColor: 'text-green-700', borderColor: 'border-green-200' },
             'Lost': { bgColor: 'bg-red-50', textColor: 'text-red-700', borderColor: 'border-red-200' }
         };
 
-        const allStages = ['New', 'Incoming', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+        const allStages = ['New', 'Incoming', 'Contacted', 'Qualified', 'Proposal', 'Second Wing', 'Won', 'Lost'];
         const pipelineStages = allStages.map(stageName => {
             const stageData = pipelineResult.find(s => s.stage === stageName);
             return {
@@ -250,12 +250,12 @@ exports.getPipelineOverview = async (req, res) => {
             'Contacted': { bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', borderColor: 'border-indigo-200' },
             'Qualified': { bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', borderColor: 'border-emerald-200' },
             'Proposal': { bgColor: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-200' },
-            'Negotiation': { bgColor: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-200' },
+            'Second Wing': { bgColor: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-200' },
             'Won': { bgColor: 'bg-green-50', textColor: 'text-green-700', borderColor: 'border-green-200' },
             'Lost': { bgColor: 'bg-red-50', textColor: 'text-red-700', borderColor: 'border-red-200' }
         };
 
-        const allStages = ['New', 'Incoming', 'Contacted', 'Qualified', 'Proposal', 'Negotiation'];
+        const allStages = ['New', 'Incoming', 'Contacted', 'Qualified', 'Proposal', 'Second Wing'];
         const pipelineStages = allStages.map(stageName => {
             const stageData = pipelineResult.find(s => s.stage === stageName);
             return {
