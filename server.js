@@ -216,6 +216,7 @@ const startServer = async () => {
                     CREATE TABLE IF NOT EXISTS google_oauth_tokens (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         user_id INT NOT NULL UNIQUE,
+                        google_email VARCHAR(255) NOT NULL,
                         access_token TEXT NOT NULL,
                         refresh_token TEXT NULL,
                         scope TEXT NULL,
